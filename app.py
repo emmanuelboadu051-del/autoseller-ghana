@@ -1,4 +1,4 @@
-﻿from flask import Flask, render_template, request, redirect, url_for, flash, abort, jsonify, Response, session
+from flask import Flask, render_template, request, redirect, url_for, flash, abort, jsonify, Response, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
@@ -707,6 +707,49 @@ def send_low_stock_email(message):
         return 'sent', 'Email sent successfully.'
     except Exception as exc:
         app.logger.exception('Failed to send low-stock email alert.')
+        return 'failed', str(exc)
+
+
+def send_password_reset_email(user, reset_link):
+    smtp_host = get_setting('SMTP_HOST', '')
+    email_from = get_setting('ALERT_EMAIL_FROM', '')
+    recipient = (user.email or '').strip().lower()
+
+    if not recipient:
+        return 'skipped', 'This account does not have an email address.'
+
+    if not smtp_host or not email_from:
+        return 'skipped', 'SMTP email settings are incomplete.'
+
+    try:
+        msg = EmailMessage()
+        msg['Subject'] = 'AutoSeller Ghana Password Reset'
+        msg['From'] = email_from
+        msg['To'] = recipient
+        msg.set_content(
+            'Hello,\n\n'
+            'We received a request to reset your AutoSeller Ghana password.\n\n'
+            f'Reset your password here: {reset_link}\n\n'
+            'This link expires in 30 minutes. If you did not request this, you can ignore this email.'
+        )
+
+        smtp_port = get_setting('SMTP_PORT', 587)
+        smtp_use_tls = get_setting('SMTP_USE_TLS', True)
+
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as smtp:
+            if smtp_use_tls:
+                smtp.starttls()
+
+            username = get_setting('SMTP_USERNAME', '')
+            password = get_setting('SMTP_PASSWORD', '')
+            if username and password:
+                smtp.login(username, password)
+
+            smtp.send_message(msg)
+
+        return 'sent', f'Reset link sent to {recipient}.'
+    except Exception as exc:
+        app.logger.exception('Failed to send password reset email.')
         return 'failed', str(exc)
 
 
@@ -1993,10 +2036,15 @@ def forgot_password():
         if user and getattr(user, 'is_approved', True):
             raw_token = create_password_reset_token(user)
             reset_link = url_for('reset_password', token=raw_token, _external=True)
-            flash(
-                f'Password reset link generated (development mode): {reset_link}',
-                'success'
-            )
+            email_status, email_details = send_password_reset_email(user, reset_link)
+
+            if email_status == 'sent':
+                flash('Password reset link sent to your email.', 'success')
+            elif app.debug:
+                flash(f'Email not sent. Development reset link: {reset_link}', 'warning')
+                flash(email_details, 'warning')
+            else:
+                flash('We could not send the reset email right now. Please contact support or try again later.', 'danger')
         else:
             flash('If the account exists, a reset link has been generated.', 'success')
 
