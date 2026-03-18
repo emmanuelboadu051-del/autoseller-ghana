@@ -680,8 +680,9 @@ def send_low_stock_email(message):
     email_from = get_setting('ALERT_EMAIL_FROM', '')
     email_to = get_setting('ALERT_EMAIL_TO', '')
 
-    if not smtp_host or not email_from or not email_to:
-        return 'skipped', 'Email settings are incomplete.'
+    missing = [name for name, val in [('SMTP Host', smtp_host), ('Email From', email_from), ('Email To', email_to)] if not val]
+    if missing:
+        return 'skipped', f'Missing: {", ".join(missing)}'
 
     try:
         msg = EmailMessage()
