@@ -1,0 +1,28 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h2>Add User</h2>
+<form method="POST" class="card p-3" style="max-width: 500px;">
+  <div class="mb-3">
+    <label class="form-label">Username</label>
+    <input type="text" name="username" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Email (optional)</label>
+    <input type="email" name="email" class="form-control">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Password</label>
+    <input type="password" name="password" class="form-control" minlength="8" required>
+    <div class="form-text">At least 8 chars, including uppercase, lowercase, and number.</div>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Role</label>
+    <select name="role" class="form-select" required>
+      <option value="staff">Staff</option>
+      <option value="admin">Admin</option>
+    </select>
+  </div>
+  <button type="submit" class="btn btn-primary">Create User</button>
+  <a href="{{ url_for('users') }}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h1>Add New Order</h1>
+<form method="POST">
+    <label>Product:</label>
+    <select name="product_id" required>
+        {% for product in products %}
+            <option value="{{ product.id }}">{{ product.name }} - GHS {{ product.price }}</option>
+        {% endfor %}
+    </select>
+    <br><br>
+
+    <label>Customer Name:</label>
+    <input type="text" name="customer_name" required>
+    <br><br>
+
+    <label>Customer Contact:</label>
+    <input type="text" name="customer_contact" required>
+    <br><br>
+
+    <label>Quantity:</label>
+    <input type="number" name="quantity" value="1" min="1" required>
+    <br><br>
+
+    <button type="submit">Add Order</button>
+</form>
+<a href="{{ url_for('orders') }}">View All Orders</a>
+{% endblock %}

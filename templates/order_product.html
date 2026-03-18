@@ -1,0 +1,34 @@
+{% extends 'layout.html' %}
+{% block content %}
+  <h1>Order Product</h1>
+  <div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title">{{ product.name }}</h5>
+      <p class="card-text">{{ product.description }}</p>
+      <p class="card-text"><strong>Unit Price:</strong> GHS {{ '%.2f'|format(product.price) }}</p>
+      <p class="card-text"><strong>Stock:</strong> {{ product.quantity }}</p>
+    </div>
+  </div>
+
+  <form method="POST" class="row g-3">
+    <div class="col-md-6">
+      <label for="customer_name" class="form-label">Customer Name</label>
+      <input id="customer_name" name="customer_name" class="form-control" value="{{ customer_name|default('') }}" required>
+    </div>
+
+    <div class="col-md-6">
+      <label for="customer_contact" class="form-label">Customer Contact</label>
+      <input id="customer_contact" name="customer_contact" class="form-control" value="{{ customer_contact|default('') }}" required>
+    </div>
+
+    <div class="col-md-6">
+      <label for="quantity" class="form-label">Quantity</label>
+      <input id="quantity" name="quantity" type="number" min="1" class="form-control" value="{{ quantity|default(1) }}" required>
+    </div>
+
+    <div class="col-12">
+      <button class="btn btn-primary" type="submit">Place Order</button>
+      <a class="btn btn-secondary" href="{{ url_for('home') }}">Back to Products</a>
+    </div>
+  </form>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="text-center py-5">
+  <h1 class="display-5 fw-bold mb-3">500</h1>
+  <p class="lead mb-4">Something went wrong on our side.</p>
+  <p class="text-muted mb-4">Please try again in a moment.</p>
+  <a class="btn btn-primary" href="{{ url_for('dashboard') }}">Return to Dashboard</a>
+</div>
+{% endblock %}

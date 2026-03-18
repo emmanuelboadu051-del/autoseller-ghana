@@ -1,0 +1,325 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AutoSeller Ghana</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" integrity="sha384-..." crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+      :root {
+        --shell-bg: linear-gradient(160deg, #f1f5fb 0%, #dde8f8 50%, #d6e4fa 100%);
+        --shell-sidebar: #070b12;
+        --shell-sidebar-soft: rgba(77, 144, 255, 0.22);
+        --shell-text: #0d1626;
+        --shell-blue: #1f6fd9;
+        --shell-blue-strong: #0f4fa8;
+        --shell-black-soft: #111827;
+      }
+
+      body {
+        margin: 0;
+        background: var(--shell-bg);
+        color: var(--shell-text);
+      }
+
+      .public-navbar {
+        background: linear-gradient(90deg, #05070d 0%, #0d1220 35%, #0f4fa8 100%);
+      }
+
+      .app-shell {
+        min-height: 100vh;
+        display: flex;
+      }
+
+      .app-sidebar {
+        width: 240px;
+        background: linear-gradient(180deg, #05070d 0%, #0a101b 45%, #0f1f38 100%);
+        color: #fff;
+        padding: 24px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.35) rgba(255, 255, 255, 0.08);
+      }
+
+      .app-sidebar::-webkit-scrollbar {
+        width: 10px;
+      }
+
+      .app-sidebar::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 999px;
+      }
+
+      .app-sidebar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.35);
+        border-radius: 999px;
+        border: 2px solid rgba(20, 34, 53, 0.65);
+      }
+
+      .app-sidebar::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
+      }
+
+      .sidebar-brand {
+        padding: 8px 10px 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .sidebar-brand small {
+        color: rgba(255, 255, 255, 0.7);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .sidebar-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .sidebar-link {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        font-size: 15px;
+        color: rgba(255, 255, 255, 0.88);
+        text-decoration: none;
+        border-radius: 12px;
+        position: relative;
+        transition: background 0.2s ease, transform 0.2s ease;
+      }
+
+      .sidebar-link i {
+        width: 18px;
+        text-align: center;
+        color: #60a5fa;
+      }
+
+      .sidebar-link:hover,
+      .sidebar-link.active-link {
+        background: var(--shell-sidebar-soft);
+        color: #dce9ff;
+        transform: translateX(2px);
+      }
+
+      .sidebar-link.active-link i {
+        color: #dce9ff;
+      }
+
+      .sidebar-link.active-link::before {
+        content: '';
+        position: absolute;
+        left: -8px;
+        top: 8px;
+        bottom: 8px;
+        width: 4px;
+        border-radius: 999px;
+        background: #7eb3ff;
+      }
+
+      .sidebar-link.icon-dashboard i { color: #60a5fa; }
+      .sidebar-link.icon-products i { color: #34d399; }
+      .sidebar-link.icon-add i { color: #22d3ee; }
+      .sidebar-link.icon-orders i { color: #fbbf24; }
+      .sidebar-link.icon-users i { color: #a78bfa; }
+      .sidebar-link.icon-audit i { color: #fb7185; }
+      .sidebar-link.icon-settings i { color: #f97316; }
+      .sidebar-link.icon-store i { color: #38bdf8; }
+      .sidebar-link.icon-password i { color: #f472b6; }
+      .sidebar-link.icon-market i { color: #4ade80; }
+      .sidebar-link.icon-cart i { color: #93c5fd; }
+      .sidebar-link.icon-logout i { color: #fca5a5; }
+
+      .card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 26px rgba(11, 18, 32, 0.14) !important;
+      }
+
+      .sidebar-footer {
+        margin-top: auto;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: rgba(31, 111, 217, 0.16);
+        font-size: 0.92rem;
+      }
+
+      .app-main {
+        flex: 1;
+        min-width: 0;
+        padding: 24px;
+      }
+
+      .flash-stack {
+        margin-bottom: 20px;
+      }
+
+      .cart-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 22px;
+        height: 22px;
+        padding: 0 7px;
+        margin-left: 6px;
+        border-radius: 999px;
+        background: #ffcc4d;
+        color: #102033;
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+
+      .form-control,
+      .form-select,
+      textarea,
+      input,
+      select {
+        background: #eef5ff;
+        border: 1px solid #7fa7da;
+        border-radius: 12px;
+        color: #0d1626;
+        box-shadow: inset 0 1px 2px rgba(16, 32, 51, 0.05);
+      }
+
+      .form-control:focus,
+      .form-select:focus,
+      textarea:focus,
+      input:focus,
+      select:focus {
+        background: #ffffff;
+        border-color: var(--shell-blue);
+        box-shadow: 0 0 0 0.2rem rgba(15, 79, 168, 0.18);
+      }
+
+      textarea::placeholder,
+      input::placeholder {
+        color: #7d8ea5;
+      }
+
+      @media (max-width: 991.98px) {
+        .app-shell {
+          display: block;
+        }
+
+        .app-sidebar {
+          width: 100%;
+          height: auto;
+          position: static;
+          border-bottom-left-radius: 18px;
+          border-bottom-right-radius: 18px;
+        }
+
+        .app-main {
+          padding: 20px 14px 28px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    {% if current_user.is_authenticated %}
+      <div class="app-shell">
+        <aside class="app-sidebar">
+          <div class="sidebar-brand">
+            <small>AutoSeller Ghana</small>
+            <h4 class="mb-1 mt-2">Seller Console</h4>
+            <div class="text-white-50 small">
+              {{ current_user.username }} |
+              {% if current_user.role == 'admin' %}
+                Admin
+              {% else %}
+                Staff
+              {% endif %}
+            </div>
+          </div>
+
+          <nav class="sidebar-nav sidebar">
+            <a class="sidebar-link icon-dashboard{% if request.endpoint == 'dashboard' %} active-link{% endif %}" href="{{ url_for('dashboard') }}"><i class="fa-solid fa-chart-line"></i>Dashboard</a>
+            <a class="sidebar-link icon-products{% if request.endpoint == 'home' %} active-link{% endif %}" href="{{ url_for('home') }}"><i class="fa-solid fa-box"></i>Products</a>
+            {% if current_user.role in ['admin', 'staff'] %}
+            <a class="sidebar-link icon-add{% if request.endpoint == 'add_product' %} active-link{% endif %}" href="{{ url_for('add_product') }}"><i class="fa-solid fa-square-plus"></i>Add Product</a>
+            {% endif %}
+            <a class="sidebar-link icon-orders{% if request.endpoint == 'orders' %} active-link{% endif %}" href="{{ url_for('orders') }}"><i class="fa-solid fa-receipt"></i>Orders</a>
+            {% if current_user.role == 'admin' %}
+            <a class="sidebar-link icon-users{% if request.endpoint == 'users' %} active-link{% endif %}" href="{{ url_for('users') }}"><i class="fa-solid fa-users"></i>Users</a>
+            <a class="sidebar-link icon-audit{% if request.endpoint == 'audit_logs' %} active-link{% endif %}" href="{{ url_for('audit_logs') }}"><i class="fa-solid fa-clipboard-list"></i>Audit Logs</a>
+            <a class="sidebar-link icon-settings{% if request.endpoint == 'alert_settings' %} active-link{% endif %}" href="{{ url_for('alert_settings') }}"><i class="fa-solid fa-gear"></i>Settings</a>
+            {% endif %}
+            <a class="sidebar-link icon-store{% if request.endpoint == 'store_settings' %} active-link{% endif %}" href="{{ url_for('store_settings') }}"><i class="fa-solid fa-store"></i>Store Settings</a>
+            <a class="sidebar-link icon-password{% if request.endpoint == 'change_password' %} active-link{% endif %}" href="{{ url_for('change_password') }}"><i class="fa-solid fa-key"></i>Change Password</a>
+            <a class="sidebar-link icon-market{% if request.endpoint == 'marketplace' %} active-link{% endif %}" href="{{ url_for('marketplace') }}"><i class="fa-solid fa-shop"></i>Public Market</a>
+            <a class="sidebar-link icon-cart{% if request.endpoint == 'cart' %} active-link{% endif %}" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i>Cart <span class="cart-badge">{{ cart_count }}</span></a>
+            <a class="sidebar-link icon-logout" href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i>Logout</a>
+          </nav>
+
+          <div class="sidebar-footer">
+            <div class="fw-semibold">Run your store</div>
+            <div class="text-white-50">Products, orders, analytics, and alerts in one workspace.</div>
+          </div>
+        </aside>
+
+        <main class="app-main">
+          <div class="flash-stack">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, text in messages %}
+                  <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+                    {{ text }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+          </div>
+
+    {% else %}
+      <nav class="navbar navbar-expand-lg navbar-dark public-navbar mb-4">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="{{ url_for('home') }}">AutoSeller Ghana</a>
+          <div class="collapse navbar-collapse show">
+            <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+              <li class="nav-item"><a class="nav-link" href="{{ url_for('marketplace') }}">Browse Products</a></li>
+              <li class="nav-item"><a class="nav-link" href="{{ url_for('cart') }}">Cart <span class="cart-badge">{{ cart_count }}</span></a></li>
+              <li class="nav-item"><a class="nav-link" href="{{ url_for('register') }}">Start Selling</a></li>
+              <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">Login</a></li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+
+      <div class="container pb-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, text in messages %}
+              <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+                {{ text }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+    {% endif %}
+
+    {% block content %}{% endblock %}
+
+    {% if current_user.is_authenticated %}
+        </main>
+      </div>
+    {% else %}
+      </div>
+    {% endif %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-..." crossorigin="anonymous"></script>
+  </body>
+</html>

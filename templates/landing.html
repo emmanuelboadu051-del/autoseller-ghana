@@ -1,0 +1,198 @@
+{% extends 'layout.html' %}
+{% block content %}
+<style>
+  .landing-hero {
+    padding: 56px 28px;
+    border-radius: 28px;
+    background: linear-gradient(135deg, #102d4d 0%, #1f7ae0 55%, #5db0ff 100%);
+    color: #fff;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .landing-hero::after {
+    content: '';
+    position: absolute;
+    inset: auto -60px -80px auto;
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .landing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+  }
+
+  .landing-card,
+  .feature-card {
+    background: rgba(255, 255, 255, 0.94);
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(16, 32, 51, 0.08);
+  }
+
+  .feature-card {
+    padding: 20px;
+    height: 100%;
+  }
+
+  .mini-product-image {
+    width: 100%;
+    height: 170px;
+    object-fit: cover;
+    display: block;
+    border-radius: 16px;
+    background: #e9eef5;
+  }
+
+  .landing-card a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .landing-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .landing-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 26px 48px rgba(16, 32, 51, 0.13);
+  }
+
+  .store-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+  }
+
+  .store-card {
+    background: #fff;
+    border-radius: 18px;
+    padding: 18px;
+    text-align: center;
+    box-shadow: 0 6px 20px rgba(16, 32, 51, 0.07);
+    border: 1px solid rgba(31, 122, 224, 0.08);
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s ease;
+    display: block;
+  }
+
+  .store-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 32px rgba(16, 32, 51, 0.12);
+  }
+
+  .store-logo {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e0ecff;
+    margin: 0 auto 10px;
+    display: block;
+    background: #eef3f7;
+  }
+</style>
+
+<section class="landing-hero mb-4 mb-lg-5">
+  <div class="row align-items-center g-4">
+    <div class="col-12 col-lg-7">
+      <p class="text-uppercase fw-semibold mb-2" style="letter-spacing:0.08em;">AutoSeller Ghana</p>
+      <h1 class="display-5 fw-bold mb-3">Start selling online in minutes.</h1>
+      <p class="lead mb-4 text-white-50">Manage products, capture WhatsApp orders, monitor revenue, and keep stock under control from one seller dashboard.</p>
+      <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-light btn-lg" href="{{ url_for('login') }}">Create Store</a>
+        <a class="btn btn-outline-light btn-lg" href="{{ url_for('marketplace') }}">Browse Products</a>
+      </div>
+    </div>
+    <div class="col-12 col-lg-5">
+      <div class="landing-card p-4 text-dark">
+        <div class="small text-uppercase text-primary fw-semibold mb-2">What sellers get</div>
+        <div class="feature-card p-0 bg-transparent shadow-none">
+          <div class="mb-3"><strong>Dashboard analytics</strong><br><span class="text-muted">Live revenue trends, top products, and views.</span></div>
+          <div class="mb-3"><strong>WhatsApp-first orders</strong><br><span class="text-muted">Capture customer details before redirecting to chat.</span></div>
+          <div><strong>Low-stock monitoring</strong><br><span class="text-muted">Stay ahead with alerts and fast restocking visibility.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h2 class="mb-1">Featured Products</h2>
+      <p class="text-muted mb-0">A public preview of what sellers are listing right now.</p>
+    </div>
+    <a class="btn btn-outline-primary" href="{{ url_for('marketplace') }}">Open Marketplace</a>
+  </div>
+
+  {% if featured_products %}
+    <div class="landing-grid">
+      {% for product in featured_products %}
+        <article class="landing-card p-3">
+          <a href="{{ url_for('marketplace') }}">
+            <img class="mini-product-image mb-3" src="{{ product.image_url or url_for('static', filename='img/product-placeholder.svg') }}" alt="{{ product.name }}">
+            <h5 class="mb-1">{{ product.name }}</h5>
+            <div class="text-primary fw-semibold mb-2">GHS {{ '%.2f'|format(product.price) }}</div>
+            <p class="text-muted small mb-0">{{ product.description or 'Listed on AutoSeller Ghana.' }}</p>
+          </a>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-light border">No products have been published yet. Sellers can sign in to start listing.</div>
+  {% endif %}
+</section>
+
+{% if trending_stores %}
+<section class="mb-5">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h2 class="mb-1">🔥 Trending Stores</h2>
+      <p class="text-muted mb-0">Top sellers on AutoSeller Ghana this week.</p>
+    </div>
+    <a class="btn btn-outline-primary" href="{{ url_for('marketplace') }}">Browse All</a>
+  </div>
+  <div class="store-grid">
+    {% for store in trending_stores %}
+      <a class="store-card" href="{{ url_for('seller_store', slug=store.store_slug) }}">
+        {% if store.store_logo %}
+          <img class="store-logo" src="{{ store.store_logo }}" alt="{{ store.store_name or store.username }}">
+        {% else %}
+          <div class="store-logo d-flex align-items-center justify-content-center fw-bold text-primary" style="background:#e7f1ff;font-size:1.4rem;">
+            {{ (store.store_name or store.username)[0] | upper }}
+          </div>
+        {% endif %}
+        <div class="fw-semibold">{{ store.store_name or store.username }}</div>
+        <div class="text-muted small">{{ store.sale_count }} sale{{ 's' if store.sale_count != 1 else '' }} this week</div>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="row g-3 g-lg-4 mt-1">
+  <div class="col-12 col-md-4">
+    <div class="feature-card">
+      <h5>Launch fast</h5>
+      <p class="text-muted mb-0">Add products, upload images, and share a public store link without complex setup.</p>
+    </div>
+  </div>
+  <div class="col-12 col-md-4">
+    <div class="feature-card">
+      <h5>Sell through WhatsApp</h5>
+      <p class="text-muted mb-0">Let customers browse online, then complete conversations where they already buy.</p>
+    </div>
+  </div>
+  <div class="col-12 col-md-4">
+    <div class="feature-card">
+      <h5>Track performance</h5>
+      <p class="text-muted mb-0">Use charts, exports, and stock alerts to run the business like a real storefront.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

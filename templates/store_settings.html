@@ -1,0 +1,43 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="card p-4" style="max-width: 720px;">
+  <h2 class="mb-3">Store Settings</h2>
+  <p class="text-muted">Customize your public storefront name, logo, description, and shareable store URL.</p>
+
+  <form method="POST" enctype="multipart/form-data">
+    <div class="mb-3">
+      <label class="form-label">Store Name</label>
+      <input class="form-control" type="text" name="store_name" value="{{ current_user.store_name or current_user.username }}" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Store URL Slug</label>
+      <input class="form-control" type="text" name="store_slug" value="{{ current_user.store_slug or '' }}" required>
+      <div class="form-text">Your public URL will be <code>/store/{{ current_user.store_slug or 'your-store' }}</code> after save.</div>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Store Description</label>
+      <textarea class="form-control" name="store_description" rows="4" placeholder="Tell customers what your store sells.">{{ current_user.store_description or '' }}</textarea>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Store Logo</label>
+      {% if current_user.store_logo %}
+        <div class="mb-2"><img src="{{ current_user.store_logo }}" alt="Current logo" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #e0ecff;"></div>
+      {% endif %}
+      <input class="form-control" type="file" name="store_logo" accept="image/*">
+      <div class="form-text">Upload a square image (PNG / JPG). Leave blank to keep current logo.</div>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">WhatsApp Contact Number</label>
+      <input class="form-control" type="text" name="store_whatsapp" value="{{ current_user.store_whatsapp or '' }}" placeholder="e.g. 233244123456">
+      <div class="form-text">Customers can tap "Contact on WhatsApp" from your store page. Include country code, digits only.</div>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <button class="btn btn-primary" type="submit">Save Store Settings</button>
+      {% if current_user.store_slug %}
+      <a class="btn btn-outline-secondary" href="{{ url_for('seller_store', slug=current_user.store_slug) }}" target="_blank">View Store</a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+{% endblock %}

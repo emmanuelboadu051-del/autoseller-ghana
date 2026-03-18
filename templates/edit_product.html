@@ -1,0 +1,81 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+
+<h2>Edit Product</h2>
+
+<form method="POST" enctype="multipart/form-data" class="row g-3">
+
+<div class="col-md-6">
+<label class="form-label">Name</label>
+<input class="form-control" type="text" name="name" value="{{ product.name }}" required>
+</div>
+
+<div class="col-md-6">
+<label class="form-label">Price</label>
+<input class="form-control" type="number" step="0.01" name="price" value="{{ product.price }}" required>
+</div>
+
+<div class="col-md-6">
+<label class="form-label">Quantity</label>
+<input class="form-control" type="number" name="quantity" value="{{ product.quantity }}" required>
+</div>
+
+<div class="col-md-6">
+<label class="form-label">Category</label>
+<input class="form-control" type="text" name="category" value="{{ product.category or '' }}" placeholder="Electronics, Fashion, Food...">
+</div>
+
+<div class="col-12">
+<label class="form-label">Description</label>
+<textarea class="form-control" name="description" rows="4">{{ product.description }}</textarea>
+</div>
+
+<div class="col-12">
+<label class="form-label">Image URL</label>
+<input class="form-control" type="url" id="image_url" name="image_url" value="{{ product.image_url or '' }}" placeholder="https://example.com/product-image.jpg">
+</div>
+
+<div class="col-12">
+<label class="form-label">Upload New Image</label>
+<input class="form-control" type="file" id="image_file" name="image_file" accept="image/*">
+<div class="form-text">If you upload a new image, it replaces the current one.</div>
+</div>
+
+<div class="col-12">
+<img id="product-preview" src="{{ product.image_url or url_for('static', filename='img/product-placeholder.svg') }}" alt="Preview" style="max-width: 240px; border-radius: 8px; border: 1px solid #e9ecef;">
+</div>
+
+<div class="col-12">
+<button class="btn btn-primary" type="submit">Update Product</button>
+<a class="btn btn-secondary" href="{{ url_for('home') }}">Cancel</a>
+</div>
+
+</form>
+
+<script>
+	const imageUrlInput = document.getElementById('image_url');
+	const imageFileInput = document.getElementById('image_file');
+	const preview = document.getElementById('product-preview');
+	const placeholder = "{{ url_for('static', filename='img/product-placeholder.svg') }}";
+
+	imageUrlInput.addEventListener('input', function () {
+		preview.src = imageUrlInput.value.trim() || placeholder;
+	});
+
+	imageFileInput.addEventListener('change', function () {
+		const file = imageFileInput.files && imageFileInput.files[0];
+		if (!file) {
+			preview.src = imageUrlInput.value.trim() || placeholder;
+			return;
+		}
+
+		const reader = new FileReader();
+		reader.onload = function (event) {
+			preview.src = event.target.result;
+		};
+		reader.readAsDataURL(file);
+	});
+</script>
+
+{% endblock %}

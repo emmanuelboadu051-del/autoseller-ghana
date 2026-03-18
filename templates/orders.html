@@ -1,0 +1,52 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h1>Orders Dashboard</h1>
+<table border="1" cellpadding="10" class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Product</th>
+            <th>Customer</th>
+            <th>Contact</th>
+            <th>Address</th>
+            <th>Quantity</th>
+            <th>Total Price (GHS)</th>
+            <th>Status</th>
+            <th>Payment</th>
+            <th>Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for order in orders %}
+        <tr>
+            <td>{{ order.id }}</td>
+            <td>{{ order.product.name if order.product else 'Unknown' }}</td>
+            <td>{{ order.customer_name }}</td>
+            <td>{{ order.customer_contact }}</td>
+            <td>{{ order.customer_address or '-' }}</td>
+            <td>{{ order.quantity }}</td>
+            <td>{{ '%.2f'|format(order.total_price) }}</td>
+            <td>{{ order.status }}</td>
+            <td>{{ order.payment_status|default('pending') }}</td>
+            <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>
+                <form method="POST" action="{{ url_for('update_order_status', order_id=order.id) }}" class="d-inline-flex gap-2 align-items-center mb-1">
+                    <select class="form-select form-select-sm" name="status">
+                        {% for s in ['Pending', 'Confirmed', 'Delivered', 'Cancelled'] %}
+                            <option value="{{ s }}" {% if order.status == s %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-sm btn-success" type="submit">Update</button>
+                </form>
+                <form method="POST" action="{{ url_for('delete_order', order_id=order.id) }}" style="display:inline;">
+                    <button class="btn btn-sm btn-danger" type="submit" onclick="return confirm('Delete this order?');">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a class="btn btn-primary" href="{{ url_for('add_order') }}">Add New Order</a>
+<a class="btn btn-secondary" href="{{ url_for('home') }}">Back to Products</a>
+{% endblock %}

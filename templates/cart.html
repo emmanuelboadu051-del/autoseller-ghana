@@ -1,0 +1,129 @@
+{% extends 'layout.html' %}
+{% block content %}
+<style>
+  .cart-shell {
+    background: linear-gradient(135deg, #ffffff, #eef6ff);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 16px 36px rgba(16, 32, 51, 0.08);
+  }
+
+  .cart-table {
+    background: #fff;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(16, 32, 51, 0.06);
+  }
+
+  .cart-summary {
+    background: #fff;
+    border-radius: 18px;
+    padding: 18px;
+    box-shadow: 0 8px 24px rgba(16, 32, 51, 0.06);
+  }
+</style>
+
+<div class="cart-shell">
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+      <h1 class="mb-1">Your Cart</h1>
+      <p class="text-muted mb-0">Review your selected products before checkout.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="btn btn-outline-danger" href="{{ url_for('clear_cart') }}">Clear Cart</a>
+      <a class="btn btn-outline-primary" href="{{ url_for('marketplace') }}">Continue Shopping</a>
+    </div>
+  </div>
+
+  {% if products %}
+    <div class="cart-table table-responsive mb-4">
+      <table class="table mb-0 align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Product</th>
+            <th>Price</th>
+            <th>Qty</th>
+            <th>Total</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in products %}
+            <tr>
+              <td>
+                <div class="fw-semibold">{{ item.product.name }}</div>
+                <div class="small text-muted">{{ item.product.seller.username if item.product.seller else 'Unknown seller' }}</div>
+              </td>
+              <td>GH₵ {{ '%.2f'|format(item.product.price) }}</td>
+              <td>
+                <form method="POST" action="{{ url_for('update_cart_item', product_id=item.product.id) }}" class="qty-form d-flex align-items-center gap-1">
+                  <button type="button" class="btn btn-outline-secondary btn-sm qty-dec" style="width:32px;">−</button>
+                  <input class="form-control form-control-sm text-center qty-input" type="number" name="quantity"
+                    min="0" max="{{ item.product.quantity }}" value="{{ item.quantity }}" style="width:56px;">
+                  <button type="button" class="btn btn-outline-secondary btn-sm qty-inc" style="width:32px;">+</button>
+                  <button class="btn btn-outline-primary btn-sm" type="submit">Update</button>
+                </form>
+              </td>
+              <td>GH₵ {{ '%.2f'|format(item.subtotal) }}</td>
+              <td>
+                <div class="d-flex gap-2 flex-wrap">
+                  <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('product_detail', product_id=item.product.id) }}">View</a>
+                  <form method="POST" action="{{ url_for('remove_cart_item', product_id=item.product.id) }}">
+                    <button class="btn btn-outline-danger btn-sm" type="submit">Remove</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="row g-3 align-items-start">
+      <div class="col-12 col-lg-5 ms-lg-auto">
+        <div class="cart-summary">
+          <h3 class="mb-3">Checkout</h3>
+          <form method="POST" action="{{ url_for('checkout') }}">
+            <div class="mb-3">
+              <label class="form-label">Name</label>
+              <input class="form-control" type="text" name="customer_name" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Phone</label>
+              <input class="form-control" type="text" name="customer_contact" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Address</label>
+              <textarea class="form-control" name="customer_address" rows="3" placeholder="Delivery address (optional)"></textarea>
+            </div>
+            <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+              <h3 class="mb-0">Total: GH₵ {{ '%.2f'|format(total) }}</h3>
+              <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-success" type="submit" name="pay_with_paystack" value="0">Checkout (Pay Later)</button>
+                <button class="btn btn-primary" type="submit" name="pay_with_paystack" value="1">Pay with Paystack</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="alert alert-light border mb-0">Your cart is empty. Browse the marketplace to add products.</div>
+  {% endif %}
+</div>
+
+<script>
+  document.querySelectorAll('.qty-form').forEach(function(form) {
+    var input = form.querySelector('.qty-input');
+    form.querySelector('.qty-dec').addEventListener('click', function() {
+      var v = parseInt(input.value) || 0;
+      if (v > 0) { input.value = v - 1; form.submit(); }
+    });
+    form.querySelector('.qty-inc').addEventListener('click', function() {
+      var v = parseInt(input.value) || 0;
+      var max = parseInt(input.max) || 999;
+      if (v < max) { input.value = v + 1; form.submit(); }
+    });
+  });
+</script>
+{% endblock %}

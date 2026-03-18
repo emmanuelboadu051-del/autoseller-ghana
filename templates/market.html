@@ -1,0 +1,84 @@
+{% extends 'layout.html' %}
+{% block content %}
+<style>
+  .market-hero {
+    padding: 28px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #ffffff, #e9f3ff);
+    box-shadow: 0 16px 36px rgba(16, 32, 51, 0.08);
+  }
+
+  .market-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+  }
+
+  .market-card {
+    background: #fff;
+    border-radius: 18px;
+    padding: 16px;
+    box-shadow: 0 14px 34px rgba(16, 32, 51, 0.08);
+    border: 1px solid rgba(31, 122, 224, 0.08);
+    height: 100%;
+  }
+
+  .market-card img {
+    width: 100%;
+    height: 190px;
+    object-fit: cover;
+    border-radius: 14px;
+    background: #eef3f7;
+  }
+
+  .market-chip {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: #e9f3ff;
+    color: #1359a6;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+</style>
+
+<section class="market-hero mb-4">
+  <div class="row g-3 align-items-center">
+    <div class="col-12 col-lg-8">
+      <p class="text-uppercase text-primary fw-semibold mb-2">Marketplace</p>
+      <h1 class="display-6 mb-2">Browse products from AutoSeller Ghana</h1>
+      <p class="text-muted mb-0">Discover what sellers are listing publicly. For direct checkout, use a seller's shared store link.</p>
+    </div>
+    <div class="col-12 col-lg-4">
+      <form method="GET" class="d-flex gap-2">
+        <input type="text" name="search" class="form-control" placeholder="Search products" value="{{ search|default('') }}">
+        <button class="btn btn-primary" type="submit">Search</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+{% if products %}
+  <div class="market-grid">
+    {% for product in products %}
+      <article class="market-card">
+        <img src="{{ product.image_url or url_for('static', filename='img/product-placeholder.svg') }}" alt="{{ product.name }}" class="mb-3">
+        <div class="market-chip mb-2">GHS {{ '%.2f'|format(product.price) }}</div>
+        <h5 class="mb-2">{{ product.name }}</h5>
+        <div class="small text-primary mb-2">Store: {{ product.seller.username if product.seller else 'Unknown' }}</div>
+        <p class="text-muted small mb-3">{{ product.description or 'Product available on AutoSeller Ghana.' }}</p>
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="small text-muted">Stock: {{ product.quantity }}</span>
+          {% if product.seller %}
+          <a class="btn btn-outline-primary btn-sm" href="{{ url_for('public_shop', seller_username=product.seller.username) }}">Visit Store</a>
+          {% else %}
+          <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('login') }}">Seller Login</a>
+          {% endif %}
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="alert alert-light border">No products matched your search.</div>
+{% endif %}
+{% endblock %}

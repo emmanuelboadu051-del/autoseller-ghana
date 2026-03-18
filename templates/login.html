@@ -1,0 +1,27 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+  <div class="row justify-content-center mt-5">
+    <div class="col-md-4">
+      <div class="card p-4">
+        <h3>Sign In</h3>
+        <p class="text-muted small">For approved seller and admin accounts.</p>
+        <form method="POST">
+          <div class="mb-3">
+            <label class="form-label">Username</label>
+            <input type="text" name="username" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input type="password" name="password" class="form-control" required>
+          </div>
+          <button class="btn btn-primary" type="submit">Login</button>
+        </form>
+        <a class="btn btn-link btn-sm px-0 mt-2" href="{{ url_for('forgot_password') }}">Forgot password?</a>
+        <hr>
+        <p class="mb-0 small text-muted">New seller?</p>
+        <a class="btn btn-outline-primary btn-sm mt-2" href="{{ url_for('register') }}">Create Seller Account</a>
+      </div>
+    </div>
+  </div>
+{% endblock %}

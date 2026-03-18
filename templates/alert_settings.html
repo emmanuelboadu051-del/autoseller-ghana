@@ -1,0 +1,130 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<h2>Alert Settings</h2>
+<p class="text-muted">Configure low-stock notification channels for email and WhatsApp.</p>
+
+<form method="POST" class="row g-3">
+  <div class="col-12">
+    <h5>Email (SMTP)</h5>
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label" for="SMTP_HOST">SMTP Host</label>
+    <input class="form-control" id="SMTP_HOST" name="SMTP_HOST" value="{{ settings.SMTP_HOST }}" placeholder="smtp.gmail.com">
+  </div>
+
+  <div class="col-md-3">
+    <label class="form-label" for="SMTP_PORT">SMTP Port</label>
+    <input class="form-control" id="SMTP_PORT" name="SMTP_PORT" value="{{ settings.SMTP_PORT }}" placeholder="587">
+  </div>
+
+  <div class="col-md-3 d-flex align-items-end">
+    <div class="form-check mb-2">
+      <input class="form-check-input" type="checkbox" id="SMTP_USE_TLS" name="SMTP_USE_TLS" {% if settings.SMTP_USE_TLS %}checked{% endif %}>
+      <label class="form-check-label" for="SMTP_USE_TLS">Use TLS</label>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label" for="SMTP_USERNAME">SMTP Username</label>
+    <input class="form-control" id="SMTP_USERNAME" name="SMTP_USERNAME" value="{{ settings.SMTP_USERNAME }}" placeholder="you@example.com">
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label" for="SMTP_PASSWORD">SMTP Password / App Password</label>
+    <input class="form-control" type="password" id="SMTP_PASSWORD" name="SMTP_PASSWORD" value="{{ settings.SMTP_PASSWORD }}">
+    <div class="form-text">Leave blank to keep the currently saved password.</div>
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label" for="ALERT_EMAIL_FROM">Email From</label>
+    <input class="form-control" id="ALERT_EMAIL_FROM" name="ALERT_EMAIL_FROM" value="{{ settings.ALERT_EMAIL_FROM }}" placeholder="you@example.com">
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label" for="ALERT_EMAIL_TO">Email To</label>
+    <input class="form-control" id="ALERT_EMAIL_TO" name="ALERT_EMAIL_TO" value="{{ settings.ALERT_EMAIL_TO }}" placeholder="admin@example.com">
+  </div>
+
+  <div class="col-12">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="ALERT_EMAIL_ENABLED" name="ALERT_EMAIL_ENABLED" {% if settings.ALERT_EMAIL_ENABLED %}checked{% endif %}>
+      <label class="form-check-label" for="ALERT_EMAIL_ENABLED">Enable Email Alerts</label>
+    </div>
+  </div>
+
+  <div class="col-12 mt-4">
+    <h5>WhatsApp (Twilio)</h5>
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label" for="TWILIO_ACCOUNT_SID">Twilio Account SID</label>
+    <input class="form-control" id="TWILIO_ACCOUNT_SID" name="TWILIO_ACCOUNT_SID" value="{{ settings.TWILIO_ACCOUNT_SID }}" placeholder="ACxxxxxxxxxxxxxxxx">
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label" for="TWILIO_AUTH_TOKEN">Twilio Auth Token</label>
+    <input class="form-control" type="password" id="TWILIO_AUTH_TOKEN" name="TWILIO_AUTH_TOKEN" value="{{ settings.TWILIO_AUTH_TOKEN }}">
+    <div class="form-text">Leave blank to keep the currently saved auth token.</div>
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label" for="TWILIO_WHATSAPP_FROM">Twilio WhatsApp From</label>
+    <input class="form-control" id="TWILIO_WHATSAPP_FROM" name="TWILIO_WHATSAPP_FROM" value="{{ settings.TWILIO_WHATSAPP_FROM }}" placeholder="whatsapp:+14155238886">
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label" for="ALERT_WHATSAPP_TO">Alert WhatsApp To</label>
+    <input class="form-control" id="ALERT_WHATSAPP_TO" name="ALERT_WHATSAPP_TO" value="{{ settings.ALERT_WHATSAPP_TO }}" placeholder="whatsapp:+233XXXXXXXXX">
+  </div>
+
+  <div class="col-12">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="ALERT_WHATSAPP_ENABLED" name="ALERT_WHATSAPP_ENABLED" {% if settings.ALERT_WHATSAPP_ENABLED %}checked{% endif %}>
+      <label class="form-check-label" for="ALERT_WHATSAPP_ENABLED">Enable WhatsApp Alerts</label>
+    </div>
+  </div>
+
+  <div class="col-12 mt-4">
+    <h5>Rate Limit and Escalation</h5>
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label" for="ALERT_MIN_INTERVAL_MINUTES">Minimum Re-Alert Interval (minutes)</label>
+    <input class="form-control" id="ALERT_MIN_INTERVAL_MINUTES" name="ALERT_MIN_INTERVAL_MINUTES" value="{{ settings.ALERT_MIN_INTERVAL_MINUTES }}" placeholder="240">
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label" for="ALERT_ESCALATION_DROP_STEP">Escalation Quantity Drop Step</label>
+    <input class="form-control" id="ALERT_ESCALATION_DROP_STEP" name="ALERT_ESCALATION_DROP_STEP" value="{{ settings.ALERT_ESCALATION_DROP_STEP }}" placeholder="2">
+  </div>
+
+  <div class="col-12 mt-4">
+    <h5>Payments (Paystack)</h5>
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label" for="PAYSTACK_PUBLIC_KEY">Paystack Public Key</label>
+    <input class="form-control" id="PAYSTACK_PUBLIC_KEY" name="PAYSTACK_PUBLIC_KEY" value="{{ settings.PAYSTACK_PUBLIC_KEY }}" placeholder="pk_live_xxxxx">
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label" for="PAYSTACK_SECRET_KEY">Paystack Secret Key</label>
+    <input class="form-control" type="password" id="PAYSTACK_SECRET_KEY" name="PAYSTACK_SECRET_KEY" value="{{ settings.PAYSTACK_SECRET_KEY }}" placeholder="sk_live_xxxxx">
+    <div class="form-text">Leave blank to keep the currently saved secret key.</div>
+  </div>
+
+  <div class="col-12">
+    <div class="form-text">Set Paystack webhook URL to <strong>/paystack/webhook</strong> on your public domain.</div>
+  </div>
+
+  <div class="col-12 mt-3">
+    <button class="btn btn-primary" type="submit" name="action" value="save">Save Alert Settings</button>
+    <button class="btn btn-success" type="submit" name="action" value="test">Save and Send Test Alert</button>
+    <button class="btn btn-outline-success" type="submit" name="action" value="test_whatsapp">Save and Test WhatsApp Only</button>
+    <button class="btn btn-outline-secondary" type="submit" name="action" value="test_email">Save and Test Email Only</button>
+    <a class="btn btn-secondary" href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+  </div>
+</form>
+{% endblock %}

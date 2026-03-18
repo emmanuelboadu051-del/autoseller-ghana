@@ -1,0 +1,78 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h2>Users</h2>
+<a href="{{ url_for('add_user') }}" class="btn btn-primary mb-3">Add User</a>
+
+<form method="GET" class="mb-3 d-flex" style="max-width: 420px; gap: 8px;">
+  <input type="text" name="search" class="form-control" placeholder="Search users..." value="{{ search|default('') }}">
+  <button class="btn btn-secondary btn-sm" type="submit">Search</button>
+</form>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Username</th>
+      <th>Email</th>
+      <th>Role</th>
+      <th>Approval</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for u in users %}
+    <tr>
+      <td>{{ u.id }}</td>
+      <td>{{ u.username }}</td>
+      <td>{{ u.email or '-' }}</td>
+      <td>{{ u.role }}</td>
+      <td>
+        {% if u.is_approved %}
+          <span class="badge bg-success">Approved</span>
+        {% else %}
+          <span class="badge bg-warning text-dark">Pending</span>
+        {% endif %}
+      </td>
+      <td>
+        <a href="{{ url_for('edit_user', user_id=u.id) }}" class="btn btn-sm btn-warning">Edit</a>
+        {% if not u.is_approved %}
+        <form action="{{ url_for('approve_user', user_id=u.id, page=pagination.page if pagination else 1, search=search) }}" method="POST" style="display:inline;">
+          <button type="submit" class="btn btn-sm btn-success">Approve</button>
+        </form>
+        {% endif %}
+        <form action="{{ url_for('reset_user_password', user_id=u.id, page=pagination.page if pagination else 1, search=search) }}" method="POST" style="display:inline;">
+          <button type="submit" class="btn btn-sm btn-info" onclick="return confirm('Reset password for {{ u.username }}? A temporary password will be shown once.')">Reset Password</button>
+        </form>
+        <form action="{{ url_for('delete_user', user_id=u.id) }}" method="POST" style="display:inline;">
+          <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this user?')">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if pagination %}
+<nav>
+  <ul class="pagination">
+    {% if pagination.has_prev %}
+      <li class="page-item"><a class="page-link" href="{{ url_for('users', page=pagination.prev_num, search=search) }}">Prev</a></li>
+    {% endif %}
+
+    {% for p in pagination.iter_pages() %}
+      {% if p %}
+        <li class="page-item {% if p == pagination.page %}active{% endif %}">
+          <a class="page-link" href="{{ url_for('users', page=p, search=search) }}">{{ p }}</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">...</span></li>
+      {% endif %}
+    {% endfor %}
+
+    {% if pagination.has_next %}
+      <li class="page-item"><a class="page-link" href="{{ url_for('users', page=pagination.next_num, search=search) }}">Next</a></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+{% endblock %}
