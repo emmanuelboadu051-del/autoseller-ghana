@@ -19,7 +19,21 @@ from datetime import datetime, timedelta, date
 import os
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
-from models import db, Product, Order, User, SystemSetting, AlertLog, LowStockAlertState, Sale, ProductView, PasswordResetToken, AuditLog
+from models import (
+    db,
+    Product,
+    Order,
+    User,
+    SystemSetting,
+    AlertLog,
+    LowStockAlertState,
+    Sale,
+    ProductView,
+    PasswordResetToken,
+    AuditLog,
+    MarketRequest,
+    RequestResponse,
+)
 
 from cryptography.fernet import Fernet, InvalidToken
 
@@ -754,6 +768,178 @@ def send_password_reset_email(user, reset_link):
         return 'failed', str(exc)
 
 
+def send_basic_email(to_email, subject, body):
+    smtp_host = get_setting('SMTP_HOST', '')
+    email_from = get_setting('ALERT_EMAIL_FROM', '')
+
+    if not smtp_host or not email_from or not to_email:
+        return 'skipped', 'Missing SMTP Host, Email From, or recipient email.'
+
+    try:
+        msg = EmailMessage()
+        msg['Subject'] = subject
+        msg['From'] = email_from
+        msg['To'] = to_email
+        msg.set_content(body)
+
+        smtp_port = get_setting('SMTP_PORT', 587)
+        smtp_use_tls = get_setting('SMTP_USE_TLS', True)
+
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as smtp:
+            if smtp_use_tls:
+                smtp.starttls()
+
+            username = get_setting('SMTP_USERNAME', '')
+            password = get_setting('SMTP_PASSWORD', '')
+            if username and password:
+                smtp.login(username, password)
+
+            smtp.send_message(msg)
+
+        return 'sent', 'Email sent.'
+    except Exception as exc:
+        app.logger.exception('Failed to send generic email.')
+        return 'failed', str(exc)
+
+
+def find_market_signal_sellers(category):
+    query = User.query.filter(User.is_approved.is_(True), User.role.in_(['admin', 'staff']))
+    sellers = query.all()
+
+    if not category:
+        return sellers
+
+    category_lower = category.strip().lower()
+    matched_ids = {
+        row[0]
+        for row in db.session.query(Product.seller_id)
+        .filter(Product.is_active.is_(True), Product.category.isnot(None), func.lower(Product.category) == category_lower)
+        .all()
+        if row[0] is not None
+    }
+
+    matched_sellers = [seller for seller in sellers if seller.id in matched_ids]
+    return matched_sellers if matched_sellers else sellers
+
+
+def notify_market_signal_sellers(signal_request):
+    sellers = find_market_signal_sellers(signal_request.category)
+    delivered = 0
+
+    for seller in sellers:
+        recipient = (seller.email or '').strip().lower()
+        if not recipient:
+            continue
+
+        subject = 'New Market Signal request on AutoSeller Ghana'
+        body = (
+            'A buyer has posted a new request.\n\n'
+            f'Request: {signal_request.request_text}\n'
+            f'Category: {signal_request.category or "Not specified"}\n'
+            f'Location: {signal_request.location or "Not specified"}\n\n'
+            'Log in to respond quickly from your Market Signal board.'
+        )
+        status, _ = send_basic_email(recipient, subject, body)
+        if status == 'sent':
+            delivered += 1
+
+    return delivered, len(sellers)
+
+
+MARKET_SIGNAL_INTENT_KEYWORDS = (
+    'where can i get',
+    'where can i buy',
+    'who sells',
+    'i need',
+    'looking for',
+    'where to get',
+)
+
+
+def looks_like_market_signal_intent(search_text):
+    normalized = (search_text or '').strip().lower()
+    if len(normalized) < 8:
+        return False
+    return any(keyword in normalized for keyword in MARKET_SIGNAL_INTENT_KEYWORDS)
+
+
+def infer_market_signal_category(search_text):
+    text_lower = (search_text or '').strip().lower()
+    if not text_lower:
+        return None
+
+    categories = [
+        row[0]
+        for row in db.session.query(Product.category)
+        .filter(Product.category.isnot(None), Product.category != '')
+        .distinct()
+        .all()
+    ]
+
+    for category in categories:
+        candidate = (category or '').strip()
+        if candidate and candidate.lower() in text_lower:
+            return candidate
+
+    return None
+
+
+def infer_market_signal_location(search_text):
+    text = (search_text or '').strip()
+    if not text:
+        return None
+
+    match = re.search(r'\bin\s+([a-zA-Z][a-zA-Z\s\-]{1,40})', text, flags=re.IGNORECASE)
+    if not match:
+        return None
+
+    location = match.group(1).strip(' .,!?:;')
+    return location[:60] if location else None
+
+
+def create_market_signal_from_search(search_text):
+    normalized_text = (search_text or '').strip()
+    if not looks_like_market_signal_intent(normalized_text):
+        return None
+
+    now = datetime.utcnow()
+    duplicate_cutoff = now - timedelta(minutes=20)
+    duplicate = MarketRequest.query.filter(
+        func.lower(MarketRequest.request_text) == normalized_text.lower(),
+        MarketRequest.created_at >= duplicate_cutoff,
+    ).first()
+
+    if duplicate:
+        return {
+            'created': False,
+            'request': duplicate,
+            'delivered': 0,
+            'total_candidates': 0,
+            'reason': 'duplicate_recent',
+        }
+
+    signal_request = MarketRequest(
+        user_id=current_user.id if current_user.is_authenticated else None,
+        requester_name=current_user.username if current_user.is_authenticated else None,
+        requester_contact=current_user.email if current_user.is_authenticated else None,
+        request_text=normalized_text,
+        category=infer_market_signal_category(normalized_text),
+        location=infer_market_signal_location(normalized_text),
+        status='open',
+    )
+    db.session.add(signal_request)
+    db.session.commit()
+
+    delivered, total_candidates = notify_market_signal_sellers(signal_request)
+    return {
+        'created': True,
+        'request': signal_request,
+        'delivered': delivered,
+        'total_candidates': total_candidates,
+        'reason': 'created',
+    }
+
+
 def send_low_stock_whatsapp(message):
     if not get_setting('ALERT_WHATSAPP_ENABLED', True):
         return 'skipped', 'WhatsApp alerts are disabled in settings.'
@@ -881,11 +1067,142 @@ def marketplace():
         Product.quantity > 0,
         Product.seller_id.isnot(None)
     ).order_by(Product.created_at.desc())
+    auto_signal_result = None
     if search:
         query = query.filter(Product.name.ilike(f"%{search}%"))
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     products = pagination.items
-    return render_template('marketplace.html', products=products, search=search, pagination=pagination)
+
+    should_auto_signal = request.args.get('auto_signal', '1') == '1'
+    if search and not products and page == 1 and should_auto_signal:
+        auto_signal_result = create_market_signal_from_search(search)
+
+    return render_template(
+        'marketplace.html',
+        products=products,
+        search=search,
+        pagination=pagination,
+        auto_signal_result=auto_signal_result,
+    )
+
+
+@app.route('/market-signal', methods=['GET', 'POST'])
+def market_signal():
+    if request.method == 'POST':
+        request_text = request.form.get('request_text', '').strip()
+        category = request.form.get('category', '').strip()
+        location = request.form.get('location', '').strip()
+        requester_name = request.form.get('requester_name', '').strip()
+        requester_contact = request.form.get('requester_contact', '').strip()
+
+        if not request_text:
+            flash('Tell sellers what you need.', 'danger')
+            return redirect(url_for('market_signal'))
+
+        if len(request_text) < 8:
+            flash('Request should be at least 8 characters.', 'danger')
+            return redirect(url_for('market_signal'))
+
+        signal_request = MarketRequest(
+            user_id=current_user.id if current_user.is_authenticated else None,
+            requester_name=requester_name or (current_user.username if current_user.is_authenticated else None),
+            requester_contact=requester_contact,
+            request_text=request_text,
+            category=category or None,
+            location=location or None,
+            status='open',
+        )
+        db.session.add(signal_request)
+        db.session.commit()
+
+        delivered, total_candidates = notify_market_signal_sellers(signal_request)
+        flash(
+            f'Market Signal sent. {delivered} of {total_candidates} seller alert emails delivered.',
+            'success' if delivered > 0 else 'danger'
+        )
+        return redirect(url_for('market_signal'))
+
+    categories = [
+        row[0]
+        for row in db.session.query(Product.category)
+        .filter(Product.category.isnot(None), Product.category != '')
+        .distinct()
+        .order_by(Product.category.asc())
+        .all()
+    ]
+    recent_requests = MarketRequest.query.order_by(MarketRequest.created_at.desc()).limit(20).all()
+
+    prefill = {
+        'request_text': request.args.get('request_text', '').strip(),
+        'category': request.args.get('category', '').strip(),
+        'location': request.args.get('location', '').strip(),
+    }
+    return render_template(
+        'market_signal.html',
+        categories=categories,
+        recent_requests=recent_requests,
+        prefill=prefill,
+    )
+
+
+@app.route('/market-signal/board')
+@login_required
+@role_required('admin', 'staff')
+def market_signal_board():
+    status_filter = (request.args.get('status', 'open') or 'open').strip().lower()
+    if status_filter not in ('open', 'closed', 'all'):
+        status_filter = 'open'
+
+    query = MarketRequest.query
+    if status_filter in ('open', 'closed'):
+        query = query.filter(MarketRequest.status == status_filter)
+
+    requests_list = query.order_by(MarketRequest.created_at.desc()).limit(150).all()
+    return render_template('market_signal_board.html', requests_list=requests_list, status_filter=status_filter)
+
+
+@app.route('/market-signal/respond/<int:request_id>', methods=['POST'])
+@login_required
+@role_required('admin', 'staff')
+def respond_market_signal(request_id):
+    signal_request = MarketRequest.query.get_or_404(request_id)
+    message = request.form.get('message', '').strip()
+    price_raw = request.form.get('price', '').strip()
+    close_request = request.form.get('close_request') == '1'
+
+    if signal_request.status == 'closed':
+        flash('This request is already closed.', 'danger')
+        return redirect(url_for('market_signal_board'))
+
+    if not message:
+        flash('Response message is required.', 'danger')
+        return redirect(url_for('market_signal_board'))
+
+    price = None
+    if price_raw:
+        try:
+            price = float(price_raw)
+            if price < 0:
+                raise ValueError
+        except ValueError:
+            flash('Price must be a valid non-negative number.', 'danger')
+            return redirect(url_for('market_signal_board'))
+
+    response = RequestResponse(
+        request_id=signal_request.id,
+        seller_id=current_user.id,
+        message=message,
+        price=price,
+    )
+    db.session.add(response)
+
+    if close_request:
+        signal_request.status = 'closed'
+
+    db.session.commit()
+    log_action('responded market signal', 'market_request', signal_request.id)
+    flash('Response sent successfully.', 'success')
+    return redirect(url_for('market_signal_board'))
 
 
 @app.route('/add-to-cart/<int:product_id>')
