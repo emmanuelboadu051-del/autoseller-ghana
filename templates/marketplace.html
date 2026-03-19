@@ -62,6 +62,21 @@
   </div>
 </section>
 
+{% if auto_signal_result %}
+  {% if auto_signal_result.created %}
+    <div class="alert alert-success border mb-4">
+      <strong>Market Signal sent:</strong>
+      We notified {{ auto_signal_result.delivered }} of {{ auto_signal_result.total_candidates }} sellers based on your request.
+      <a class="ms-2" href="{{ url_for('market_signal_board') }}">Open Seller Board</a>
+    </div>
+  {% elif auto_signal_result.reason == 'duplicate_recent' %}
+    <div class="alert alert-info border mb-4">
+      A similar Market Signal was already sent recently, so we skipped creating another one.
+      <a class="ms-2" href="{{ url_for('market_signal', request_text=search) }}">Open Market Signal</a>
+    </div>
+  {% endif %}
+{% endif %}
+
 {% if products %}
   <div class="market-grid">
     {% for product in products %}
@@ -125,6 +140,10 @@
     </nav>
   {% endif %}
 {% else %}
-  <div class="alert alert-light border">No products matched your search.</div>
+  <div class="alert alert-light border">
+    <div class="fw-semibold mb-1">No products matched your search.</div>
+    <div class="small text-muted mb-2">Use Market Signal so sellers can respond directly to your need.</div>
+    <a class="btn btn-warning btn-sm" href="{{ url_for('market_signal', request_text=search, auto_from='marketplace') }}">Send Market Signal</a>
+  </div>
 {% endif %}
 {% endblock %}
