@@ -388,8 +388,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  const sellerId = {{ seller_id }};
-  const storeLink = "{{ public_shop_link }}";
+  const sellerId = JSON.parse('{{ seller_id | tojson }}');
+  const storeLink = JSON.parse('{{ public_shop_link | tojson }}');
 
   const commonOptions = {
     responsive: true,
@@ -585,9 +585,9 @@
 
 <script>
   (function () {
-    const revenueLabels = {{ last7days_labels | tojson }};
-    const revenueData   = {{ last7days_revenue | tojson }};
-    const ordersData    = {{ last7days_orders  | tojson }};
+    const revenueLabels = JSON.parse('{{ last7days_labels | tojson }}');
+    const revenueData = JSON.parse('{{ last7days_revenue | tojson }}');
+    const ordersData = JSON.parse('{{ last7days_orders | tojson }}');
 
     const darkGrid = {
       color: 'rgba(148, 163, 184, 0.15)'
