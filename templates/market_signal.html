@@ -1,0 +1,81 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        <h3 class="mb-2">Market Signal</h3>
+        <p class="text-muted mb-4">Can not find what you need? Send a live signal and sellers will respond fast.</p>
+
+        <form method="POST" class="row g-3">
+          <div class="col-12">
+            <label class="form-label" for="request_text">What are you looking for?</label>
+            <textarea class="form-control" id="request_text" name="request_text" rows="4" placeholder="Example: Where can I buy iPhone 11 in Kumasi?" required>{{ prefill.request_text if prefill else '' }}</textarea>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label" for="category">Category</label>
+            <select class="form-select" id="category" name="category">
+              <option value="">Any category</option>
+              {% for c in categories %}
+              <option value="{{ c }}" {% if prefill and prefill.category == c %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label" for="location">Location</label>
+            <input class="form-control" id="location" name="location" placeholder="Accra, Kumasi, Takoradi..." value="{{ prefill.location if prefill else '' }}">
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label" for="requester_name">Your name (optional)</label>
+            <input class="form-control" id="requester_name" name="requester_name" placeholder="Kwame">
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label" for="requester_contact">Phone/Email (optional)</label>
+            <input class="form-control" id="requester_contact" name="requester_contact" placeholder="024xxxxxxx or email">
+          </div>
+
+          <div class="col-12 d-flex gap-2">
+            <button type="submit" class="btn btn-warning fw-semibold">Send Market Signal</button>
+            {% if current_user.is_authenticated and current_user.role in ['admin', 'staff'] %}
+            <a href="{{ url_for('market_signal_board') }}" class="btn btn-outline-primary">Open Seller Board</a>
+            {% endif %}
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        <h5 class="mb-3">Recent Signals</h5>
+        {% if recent_requests %}
+          <div class="d-flex flex-column gap-3">
+            {% for r in recent_requests %}
+            <div class="border rounded-3 p-3 bg-light">
+              <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                  <div class="fw-semibold">{{ r.request_text }}</div>
+                  <div class="small text-muted">
+                    {{ r.category or 'Any category' }} | {{ r.location or 'Any location' }}
+                  </div>
+                </div>
+                <span class="badge {{ 'bg-success' if r.status == 'open' else 'bg-secondary' }}">{{ r.status|title }}</span>
+              </div>
+              <div class="small text-muted mt-2">{{ r.created_at.strftime('%Y-%m-%d %H:%M') }} UTC</div>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted mb-0">No signals yet. Be the first to send one.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
