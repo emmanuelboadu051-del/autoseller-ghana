@@ -145,3 +145,33 @@ class ProductView(db.Model):
     seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
     view_date = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class MarketRequest(db.Model):
+    __tablename__ = 'market_request'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
+    requester_name = db.Column(db.String(120), nullable=True)
+    requester_contact = db.Column(db.String(120), nullable=True)
+    request_text = db.Column(db.Text, nullable=False)
+    category = db.Column(db.String(80), nullable=True, index=True)
+    location = db.Column(db.String(120), nullable=True, index=True)
+    status = db.Column(db.String(20), nullable=False, default='open', index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    user = db.relationship('User', backref='market_requests', lazy=True)
+
+
+class RequestResponse(db.Model):
+    __tablename__ = 'request_response'
+
+    id = db.Column(db.Integer, primary_key=True)
+    request_id = db.Column(db.Integer, db.ForeignKey('market_request.id'), nullable=False, index=True)
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    message = db.Column(db.Text, nullable=False)
+    price = db.Column(db.Float, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    request = db.relationship('MarketRequest', backref='responses', lazy=True)
+    seller = db.relationship('User', backref='market_signal_responses', lazy=True)
