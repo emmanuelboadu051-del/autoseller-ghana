@@ -8,6 +8,7 @@ from functools import wraps
 from apscheduler.schedulers.background import BackgroundScheduler
 import re
 import smtplib
+import socket
 import hmac
 import json
 from email.message import EmailMessage
@@ -686,6 +687,37 @@ def save_uploaded_product_image(file_storage):
     return f"/static/uploads/{unique_name}", None
 
 
+def open_smtp_connection(smtp_host, smtp_port, timeout=20):
+    try:
+        return smtplib.SMTP(smtp_host, smtp_port, timeout=timeout)
+    except OSError as exc:
+        # Some hosts fail on IPv6 route selection (Errno 101). Retry with IPv4.
+        if getattr(exc, 'errno', None) != 101:
+            raise
+
+        addr_info = socket.getaddrinfo(smtp_host, smtp_port, socket.AF_INET, socket.SOCK_STREAM)
+        if not addr_info:
+            raise
+
+        last_error = exc
+        for info in addr_info:
+            ip_addr = info[4][0]
+            client = smtplib.SMTP(timeout=timeout)
+            try:
+                client.connect(ip_addr, smtp_port)
+                # Keep original host for EHLO/TLS context even when connected via IP.
+                client._host = smtp_host
+                return client
+            except OSError as inner_exc:
+                last_error = inner_exc
+                try:
+                    client.close()
+                except Exception:
+                    pass
+
+        raise last_error
+
+
 def send_low_stock_email(message):
     if not get_setting('ALERT_EMAIL_ENABLED', True):
         return 'skipped', 'Email alerts are disabled in settings.'
@@ -708,7 +740,7 @@ def send_low_stock_email(message):
         smtp_port = get_setting('SMTP_PORT', 587)
         smtp_use_tls = get_setting('SMTP_USE_TLS', True)
 
-        with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as smtp:
+        with open_smtp_connection(smtp_host, smtp_port, timeout=20) as smtp:
             if smtp_use_tls:
                 smtp.starttls()
 
@@ -751,7 +783,7 @@ def send_password_reset_email(user, reset_link):
         smtp_port = get_setting('SMTP_PORT', 587)
         smtp_use_tls = get_setting('SMTP_USE_TLS', True)
 
-        with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as smtp:
+        with open_smtp_connection(smtp_host, smtp_port, timeout=20) as smtp:
             if smtp_use_tls:
                 smtp.starttls()
 
@@ -785,7 +817,7 @@ def send_basic_email(to_email, subject, body):
         smtp_port = get_setting('SMTP_PORT', 587)
         smtp_use_tls = get_setting('SMTP_USE_TLS', True)
 
-        with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as smtp:
+        with open_smtp_connection(smtp_host, smtp_port, timeout=20) as smtp:
             if smtp_use_tls:
                 smtp.starttls()
 
