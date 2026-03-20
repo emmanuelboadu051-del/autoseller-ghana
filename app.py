@@ -1147,7 +1147,12 @@ def market_signal():
         db.session.add(signal_request)
         db.session.commit()
 
-        delivered, total_candidates = notify_market_signal_sellers(signal_request)
+        try:
+            delivered, total_candidates = notify_market_signal_sellers(signal_request)
+        except Exception as exc:
+            app.logger.exception('Market Signal seller notification failed unexpectedly.')
+            delivered, total_candidates = 0, 0
+            flash(f'Market Signal saved, but seller alerts failed: {exc}', 'danger')
         flash(
             f'Market Signal sent. {delivered} of {total_candidates} seller alert emails delivered.',
             'success' if delivered > 0 else 'danger'
@@ -2317,11 +2322,19 @@ def alert_settings():
             whatsapp_status, whatsapp_details = 'skipped', 'WhatsApp test not requested.'
 
             if action in ('test', 'test_email'):
-                email_status, email_details = send_low_stock_email(test_message)
+                try:
+                    email_status, email_details = send_low_stock_email(test_message)
+                except Exception as exc:
+                    app.logger.exception('Alert test email failed unexpectedly.')
+                    email_status, email_details = 'failed', str(exc)
                 record_alert('email', email_status, test_message, f'TEST: {email_details}')
 
             if action in ('test', 'test_whatsapp'):
-                whatsapp_status, whatsapp_details = send_low_stock_whatsapp(test_message)
+                try:
+                    whatsapp_status, whatsapp_details = send_low_stock_whatsapp(test_message)
+                except Exception as exc:
+                    app.logger.exception('Alert test WhatsApp failed unexpectedly.')
+                    whatsapp_status, whatsapp_details = 'failed', str(exc)
                 record_alert('whatsapp', whatsapp_status, test_message, f'TEST: {whatsapp_details}')
 
             flash(
