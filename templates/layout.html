@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -136,6 +136,7 @@
       .sidebar-link.icon-store i { color: #38bdf8; }
       .sidebar-link.icon-password i { color: #f472b6; }
       .sidebar-link.icon-market i { color: #4ade80; }
+      .sidebar-link.icon-signal i { color: #facc15; }
       .sidebar-link.icon-cart i { color: #93c5fd; }
       .sidebar-link.icon-logout i { color: #fca5a5; }
 
@@ -253,11 +254,13 @@
             <a class="sidebar-link icon-orders{% if request.endpoint == 'orders' %} active-link{% endif %}" href="{{ url_for('orders') }}"><i class="fa-solid fa-receipt"></i>Orders</a>
             {% if current_user.role == 'admin' %}
             <a class="sidebar-link icon-users{% if request.endpoint == 'users' %} active-link{% endif %}" href="{{ url_for('users') }}"><i class="fa-solid fa-users"></i>Users</a>
+            <a class="sidebar-link icon-products{% if request.endpoint == 'admin_seller_products' %} active-link{% endif %}" href="{{ url_for('admin_seller_products') }}"><i class="fa-solid fa-boxes-stacked"></i>Seller Products</a>
             <a class="sidebar-link icon-audit{% if request.endpoint == 'audit_logs' %} active-link{% endif %}" href="{{ url_for('audit_logs') }}"><i class="fa-solid fa-clipboard-list"></i>Audit Logs</a>
             <a class="sidebar-link icon-settings{% if request.endpoint == 'alert_settings' %} active-link{% endif %}" href="{{ url_for('alert_settings') }}"><i class="fa-solid fa-gear"></i>Settings</a>
             {% endif %}
             <a class="sidebar-link icon-store{% if request.endpoint == 'store_settings' %} active-link{% endif %}" href="{{ url_for('store_settings') }}"><i class="fa-solid fa-store"></i>Store Settings</a>
             <a class="sidebar-link icon-password{% if request.endpoint == 'change_password' %} active-link{% endif %}" href="{{ url_for('change_password') }}"><i class="fa-solid fa-key"></i>Change Password</a>
+            <a class="sidebar-link icon-signal{% if request.endpoint in ['market_signal', 'market_signal_board'] %} active-link{% endif %}" href="{{ url_for('market_signal_board') }}"><i class="fa-solid fa-bolt"></i>Market Signal</a>
             <a class="sidebar-link icon-market{% if request.endpoint == 'marketplace' %} active-link{% endif %}" href="{{ url_for('marketplace') }}"><i class="fa-solid fa-shop"></i>Public Market</a>
             <a class="sidebar-link icon-cart{% if request.endpoint == 'cart' %} active-link{% endif %}" href="{{ url_for('cart') }}"><i class="fa-solid fa-cart-shopping"></i>Cart <span class="cart-badge">{{ cart_count }}</span></a>
             <a class="sidebar-link icon-logout" href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i>Logout</a>
@@ -290,6 +293,7 @@
           <div class="collapse navbar-collapse show">
             <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
               <li class="nav-item"><a class="nav-link" href="{{ url_for('marketplace') }}">Browse Products</a></li>
+              <li class="nav-item"><a class="nav-link" href="{{ url_for('market_signal') }}">Market Signal</a></li>
               <li class="nav-item"><a class="nav-link" href="{{ url_for('cart') }}">Cart <span class="cart-badge">{{ cart_count }}</span></a></li>
               <li class="nav-item"><a class="nav-link" href="{{ url_for('register') }}">Start Selling</a></li>
               <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">Login</a></li>
