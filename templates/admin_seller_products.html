@@ -1,0 +1,256 @@
+{% extends 'layout.html' %}
+{% block content %}
+<style>
+  .stat-card {
+    background: white;
+    border-radius: 18px;
+    padding: 20px 24px;
+    box-shadow: 0 4px 16px rgba(16, 32, 51, 0.08);
+    border-left: 5px solid;
+  }
+  .stat-card.blue  { border-color: #3b82f6; }
+  .stat-card.green { border-color: #10b981; }
+  .stat-card.red   { border-color: #ef4444; }
+  .stat-card .stat-num { font-size: 2rem; font-weight: 700; }
+
+  .seller-block {
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 4px 16px rgba(16, 32, 51, 0.07);
+    margin-bottom: 28px;
+    overflow: hidden;
+  }
+  .seller-header {
+    background: linear-gradient(135deg, #0f4fa8, #1a72e8);
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .seller-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255,255,255,0.4);
+    background: rgba(255,255,255,0.15);
+  }
+  .seller-avatar-placeholder {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: white;
+    flex-shrink: 0;
+  }
+  .product-table th {
+    background: #f0f6ff;
+    color: #0f4fa8;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .product-thumb {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    object-fit: cover;
+    background: #e9f0fb;
+  }
+  .badge-active   { background: #d1fae5; color: #065f46; border-radius: 999px; padding: 3px 10px; font-size: 0.78rem; font-weight: 600; }
+  .badge-inactive { background: #fee2e2; color: #991b1b; border-radius: 999px; padding: 3px 10px; font-size: 0.78rem; font-weight: 600; }
+  .badge-lowstock { background: #fef3c7; color: #92400e; border-radius: 999px; padding: 3px 10px; font-size: 0.78rem; font-weight: 600; }
+</style>
+
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+  <div>
+    <h2 class="mb-0">Seller Products</h2>
+    <p class="text-muted small mb-0">
+      All products across every seller account
+      {% if pagination and total_products %}
+        · Showing {{ pagination.items|length }} on this page ({{ total_products }} total)
+      {% endif %}
+    </p>
+  </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4">
+    <div class="stat-card blue">
+      <div class="stat-num text-primary">{{ total_products }}</div>
+      <div class="text-muted small">Total Products</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="stat-card green">
+      <div class="stat-num" style="color:#10b981;">{{ total_active }}</div>
+      <div class="text-muted small">Active</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="stat-card red">
+      <div class="stat-num" style="color:#ef4444;">{{ total_low_stock }}</div>
+      <div class="text-muted small">Low / Out of Stock</div>
+    </div>
+  </div>
+</div>
+
+<!-- Filters -->
+<form method="GET" class="row g-2 align-items-end mb-4">
+  <div class="col-12 col-md-5">
+    <label class="form-label small fw-semibold">Search product name / category</label>
+    <input type="text" name="search" class="form-control" placeholder="e.g. iPhone, Electronics..." value="{{ search }}">
+  </div>
+  <div class="col-12 col-md-4">
+    <label class="form-label small fw-semibold">Filter by seller</label>
+    <select name="seller_id" class="form-select">
+      <option value="">All Sellers</option>
+      {% for s in sellers %}
+        <option value="{{ s.id }}" {% if seller_id_filter == s.id|string %}selected{% endif %}>
+          {{ s.store_name or s.username }} ({{ s.username }})
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-auto">
+    <button type="submit" class="btn btn-primary">Filter</button>
+    <a href="{{ url_for('admin_seller_products', seller_id=seller_id_filter, search=search, export='csv') }}" class="btn btn-success">
+      <i class="fa-solid fa-file-csv"></i> Export CSV
+    </a>
+    <a href="{{ url_for('admin_seller_products') }}" class="btn btn-outline-secondary">Clear</a>
+  </div>
+</form>
+
+{% if not grouped %}
+  <div class="alert alert-light border text-center py-4">
+    <i class="fa-solid fa-box-open fa-2x text-muted mb-2"></i>
+    <p class="mb-0 text-muted">No products found{% if search %} matching "<strong>{{ search }}</strong>"{% endif %}.</p>
+  </div>
+{% endif %}
+
+{% for seller_id, group in grouped.items() %}
+  {% set seller = group.seller %}
+  {% set prods   = group.products %}
+  <div class="seller-block">
+    <div class="seller-header">
+      {% if seller and seller.store_logo %}
+        <img src="{{ seller.store_logo }}" alt="logo" class="seller-avatar">
+      {% else %}
+        <div class="seller-avatar-placeholder"><i class="fa-solid fa-user"></i></div>
+      {% endif %}
+      <div>
+        <div class="fw-bold fs-5">{{ seller.store_name or seller.username if seller else 'Unknown Seller' }}</div>
+        <div class="opacity-75 small">
+          @{{ seller.username if seller else '—' }}
+          {% if seller and seller.email %} · {{ seller.email }}{% endif %}
+          {% if seller and seller.store_whatsapp %} · <i class="fa-brands fa-whatsapp"></i> {{ seller.store_whatsapp }}{% endif %}
+        </div>
+      </div>
+      <div class="ms-auto text-end">
+        <span class="badge bg-light text-dark">{{ prods|length }} product{{ 's' if prods|length != 1 }}</span>
+        {% if seller and seller.store_slug %}
+          <a href="{{ url_for('seller_store', slug=seller.store_slug) }}" target="_blank" class="btn btn-sm btn-light ms-2">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Store
+          </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table product-table align-middle mb-0">
+        <thead>
+          <tr>
+            <th style="width:56px;"></th>
+            <th>Product</th>
+            <th>Category</th>
+            <th>Price (GH₵)</th>
+            <th>Qty</th>
+            <th>Status</th>
+            <th>Added</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in prods %}
+          <tr>
+            <td>
+              <img src="{{ p.image_url or url_for('static', filename='img/product-placeholder.svg') }}"
+                   alt="{{ p.name }}" class="product-thumb">
+            </td>
+            <td>
+              <div class="fw-semibold">{{ p.name }}</div>
+              {% if p.description %}
+                <div class="text-muted small text-truncate" style="max-width:220px;">{{ p.description }}</div>
+              {% endif %}
+            </td>
+            <td>{{ p.category or '—' }}</td>
+            <td class="fw-semibold">{{ '%.2f'|format(p.price) }}</td>
+            <td>
+              {% if p.quantity == 0 %}
+                <span class="badge-lowstock">Out of stock</span>
+              {% elif p.quantity <= p.low_stock_threshold %}
+                <span class="badge-lowstock">{{ p.quantity }} low</span>
+              {% else %}
+                {{ p.quantity }}
+              {% endif %}
+            </td>
+            <td>
+              {% if p.is_active %}
+                <span class="badge-active">Active</span>
+              {% else %}
+                <span class="badge-inactive">Inactive</span>
+              {% endif %}
+            </td>
+            <td class="text-muted small">{{ p.created_at.strftime('%d %b %Y') if p.created_at else '—' }}</td>
+            <td>
+              <a href="{{ url_for('product_detail', product_id=p.id) }}" class="btn btn-sm btn-outline-primary">View</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endfor %}
+
+{% if pagination and (pagination.has_prev or pagination.has_next) %}
+  <nav class="mt-4 d-flex justify-content-center" aria-label="Seller products pages">
+    <ul class="pagination">
+      {% if pagination.has_prev %}
+        <li class="page-item">
+          <a class="page-link" href="{{ url_for('admin_seller_products', page=pagination.prev_num, seller_id=seller_id_filter, search=search) }}">&laquo; Prev</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">&laquo; Prev</span></li>
+      {% endif %}
+
+      {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {% if p %}
+          <li class="page-item {% if p == pagination.page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('admin_seller_products', page=p, seller_id=seller_id_filter, search=search) }}">{{ p }}</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+        {% endif %}
+      {% endfor %}
+
+      {% if pagination.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="{{ url_for('admin_seller_products', page=pagination.next_num, seller_id=seller_id_filter, search=search) }}">Next &raquo;</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Next &raquo;</span></li>
+      {% endif %}
+    </ul>
+  </nav>
+{% endif %}
+
+{% endblock %}
