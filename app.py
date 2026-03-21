@@ -6,6 +6,8 @@ from sqlalchemy import text, func, desc
 from urllib.parse import quote_plus
 from functools import wraps
 from apscheduler.schedulers.background import BackgroundScheduler
+import csv
+import io
 import re
 import smtplib
 import socket
@@ -2636,6 +2638,105 @@ def approve_user(user_id):
     log_action('approved user', 'user', user.id)
     flash(f'User {user.username} approved.', 'success')
     return redirect(url_for('users', page=request.args.get('page', 1, type=int), search=request.args.get('search', '').strip()))
+
+
+@app.route('/admin/seller-products')
+@login_required
+@role_required('admin')
+def admin_seller_products():
+    seller_id_filter = request.args.get('seller_id', '', type=str)
+    search = request.args.get('search', '').strip()
+    export = request.args.get('export', '').strip().lower()
+    page = request.args.get('page', 1, type=int)
+    per_page = 24
+
+    query = (
+        Product.query
+        .join(User, Product.seller_id == User.id, isouter=True)
+        .order_by(User.username.asc(), Product.created_at.desc())
+    )
+    if seller_id_filter.isdigit():
+        query = query.filter(Product.seller_id == int(seller_id_filter))
+    if search:
+        query = query.filter(
+            db.or_(
+                Product.name.ilike(f'%{search}%'),
+                Product.category.ilike(f'%{search}%'),
+            )
+        )
+
+    total_products = query.count()
+    total_active = query.filter(Product.is_active.is_(True)).count()
+    total_low_stock = query.filter(Product.quantity <= Product.low_stock_threshold).count()
+
+    if export == 'csv':
+        rows = query.all()
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow([
+            'Product ID',
+            'Product Name',
+            'Category',
+            'Price',
+            'Quantity',
+            'Low Stock Threshold',
+            'Active',
+            'Created At',
+            'Seller ID',
+            'Seller Username',
+            'Store Name',
+            'Seller Email',
+            'Seller WhatsApp',
+        ])
+        for p in rows:
+            seller = p.seller
+            writer.writerow([
+                p.id,
+                p.name,
+                p.category or '',
+                f"{p.price:.2f}",
+                p.quantity,
+                p.low_stock_threshold,
+                'yes' if p.is_active else 'no',
+                p.created_at.isoformat() if p.created_at else '',
+                seller.id if seller else '',
+                seller.username if seller else '',
+                seller.store_name if seller and seller.store_name else '',
+                seller.email if seller and seller.email else '',
+                seller.store_whatsapp if seller and seller.store_whatsapp else '',
+            ])
+
+        filename = f"seller_products_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+        return Response(
+            output.getvalue(),
+            mimetype='text/csv',
+            headers={'Content-Disposition': f'attachment; filename={filename}'},
+        )
+
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    products = pagination.items
+    sellers = User.query.order_by(User.username.asc()).all()
+
+    # Group products by seller for display
+    from collections import OrderedDict
+    grouped = OrderedDict()
+    for p in products:
+        sid = p.seller_id
+        if sid not in grouped:
+            grouped[sid] = {'seller': p.seller, 'products': []}
+        grouped[sid]['products'].append(p)
+
+    return render_template(
+        'admin_seller_products.html',
+        grouped=grouped,
+        sellers=sellers,
+        pagination=pagination,
+        seller_id_filter=seller_id_filter,
+        search=search,
+        total_products=total_products,
+        total_active=total_active,
+        total_low_stock=total_low_stock,
+    )
 
 
 if __name__ == '__main__':
