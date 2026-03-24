@@ -39,6 +39,7 @@ from models import (
 )
 
 from cryptography.fernet import Fernet, InvalidToken
+from jinja2 import TemplateNotFound
 
 try:
     from PIL import Image, ImageOps
@@ -1197,7 +1198,12 @@ def market_signal_board():
         query = query.filter(MarketRequest.status == status_filter)
 
     requests_list = query.order_by(MarketRequest.created_at.desc()).limit(150).all()
-    return render_template('market_signal_board.html', requests_list=requests_list, status_filter=status_filter)
+    try:
+        return render_template('market_signal_board.html', requests_list=requests_list, status_filter=status_filter)
+    except TemplateNotFound:
+        app.logger.exception('Template market_signal_board.html is missing in deployment.')
+        flash('Market Signal board template is missing in this deployment. Showing fallback view.', 'warning')
+        return render_template('market_signal.html', categories=[], recent_requests=requests_list, prefill={})
 
 
 @app.route('/market-signal/respond/<int:request_id>', methods=['POST'])
